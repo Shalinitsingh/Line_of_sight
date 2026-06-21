@@ -1,0 +1,23 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+pydantic[email]
+pydantic-settings
+pyjwt
+bcrypt
+python-multipart
+pandas
+openpyxl
+asteval
+anthropic
+pgvector
+httpx
+pytest
+pytest-asyncio
+
+# --- dev / linting (PEP 8) ---
+black
+isort
+flake8
+autoflake
