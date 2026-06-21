@@ -28,6 +28,22 @@ class Settings(BaseSettings):
     # pgvector dimension — MUST match your embedding model (1024 = Voyage voyage-3)
     embedding_dim: int = 1024
 
+    # Environment + email verification
+    app_env: str = "dev"  # 'dev' surfaces verification codes in API responses
+    code_ttl_minutes: int = 10
+
+    # SMTP (leave smtp_host empty for DEV mode: codes are logged, not emailed)
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str = "Line-of-Sight <no-reply@lineofsight.local>"
+    smtp_starttls: bool = True
+
+    @property
+    def is_dev(self) -> bool:
+        return self.app_env.lower() == "dev"
+
 
 @lru_cache
 def get_settings() -> Settings:

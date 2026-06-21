@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: "Inter", system-ui, sans-serif;
+  /* default = corporate (orange). 10% accent of the 60-30-10 scheme */
+  --accent: #c77f2e;
+  --accent-hover: #b06d22;
+  --accent-soft: #f6ecdf;
+}
+[data-theme="hospital"] {
+  --accent: #3d7b7c;
+  --accent-hover: #336668;
+  --accent-soft: #e3efef;
+}
+
+html,
+body {
+  background: #ffffff;
+  color: #1b2a4a;
+}
+
+/* shared building blocks matching the Figma */
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 9999px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+.btn-accent:hover {
+  background: var(--accent-hover);
+}
+.btn-accent:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-navy {
+  background: #1b2a4a;
+  color: #fff;
+  border-radius: 9999px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+}
+.btn-navy:hover {
+  background: #16243f;
+}
+
+.field {
+  width: 100%;
+  background: #eef1f5;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding: 0.85rem 1.25rem;
+  color: #1b2a4a;
+  outline: none;
+}
+.field:focus {
+  border-color: var(--accent);
+  background: #fff;
+}
+.field::placeholder {
+  color: #9aa3b2;
+  text-align: center;
+}

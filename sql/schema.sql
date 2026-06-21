@@ -95,11 +95,14 @@ CREATE TABLE users (
   full_name     text,
   role          user_role   NOT NULL DEFAULT 'viewer',
   password_hash text,                     -- or null if SSO
+  email_verified boolean    NOT NULL DEFAULT false,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now(),
   UNIQUE (org_id, email)                  -- email unique per tenant, not globally
 );
 CREATE INDEX ON users (org_id);
+-- Email is also the global login identity (one account per email).
+CREATE UNIQUE INDEX users_email_global_uniq ON users (lower(email));
 
 -- =============================================================================
 -- 5. FLEXIBLE INGESTION LAYER  (the heart of the schema-agnostic design)
@@ -378,6 +381,22 @@ CREATE POLICY tenant_isolation ON audit_logs
   USING (org_id = app_current_org())
   WITH CHECK (org_id = app_current_org());
 
+-- =============================================================================
+-- 11b. VERIFICATION CODES  (pre-auth email verify / password reset; NOT under RLS)
+-- =============================================================================
+CREATE TABLE verification_codes (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email       text        NOT NULL,
+  purpose     text        NOT NULL,        -- 'email_verify' | 'password_reset'
+  code_hash   text        NOT NULL,        -- sha256 of the 6-digit code
+  expires_at  timestamptz NOT NULL,
+  consumed_at timestamptz,
+  attempts    int         NOT NULL DEFAULT 0,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX verification_codes_lookup
+  ON verification_codes (lower(email), purpose, created_at DESC);
+
 -- -----------------------------------------------------------------------------
 -- 12. GRANTS to the application role
 -- -----------------------------------------------------------------------------
@@ -385,6 +404,8 @@ GRANT USAGE ON SCHEMA public TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
 -- audit_logs is append-only: revoke mutation.
 REVOKE UPDATE, DELETE ON audit_logs FROM app_user;
+-- verification_codes is provisioner-only (pre-auth).
+REVOKE ALL ON verification_codes FROM app_user;
 GRANT EXECUTE ON FUNCTION app_current_org(), app_current_user() TO app_user;
 
 -- =============================================================================
