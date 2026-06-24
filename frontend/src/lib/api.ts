@@ -28,7 +28,16 @@ async function request<T>(
     if (t) headers["Authorization"] = `Bearer ${t}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, init);
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, init);
+  } catch {
+    // fetch only throws on network/CORS failure, never on HTTP error status.
+    throw new ApiError(
+      `Cannot reach the backend at ${BASE}. Is it running? (docker compose up)`,
+      0
+    );
+  }
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
   if (!res.ok) {
@@ -68,6 +77,9 @@ export const api = {
 
   login: (b: { email: string; password: string }) =>
     request<AuthResult>("/auth/login", { method: "POST", body: b }),
+
+  googleSignin: (b: { credential: string; industry: Industry }) =>
+    request<AuthResult>("/auth/google", { method: "POST", body: b }),
 
   sendCode: (b: { email: string; purpose: "email_verify" | "password_reset" }) =>
     request<{ sent: boolean; expires_in_minutes: number; dev_code?: string }>(

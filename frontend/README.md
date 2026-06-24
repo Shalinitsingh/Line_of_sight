@@ -64,3 +64,14 @@ npx prettier --write src
 ## Not wired in this build
 - **Google sign-in** — the button is present but disabled (OAuth is a separate setup).
 - Token is stored in `localStorage`; for production, move to httpOnly cookies.
+
+## Enabling Google Sign-In
+
+1. Google Cloud Console → APIs & Services → Credentials → **Create OAuth client ID** → Web application.
+2. Under **Authorized JavaScript origins** add `http://localhost:3000`.
+3. Copy the Client ID. Put it in **two** places:
+   - frontend `.env.local`: `NEXT_PUBLIC_GOOGLE_CLIENT_ID=<client-id>`
+   - backend `.env`: `GOOGLE_CLIENT_ID=<same-client-id>`  (used to verify the token)
+4. Restart both the frontend (`npm run dev`) and backend (`docker compose up`).
+
+Until both are set, the Google button shows a hint instead of rendering — email/password works regardless.

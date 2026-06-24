@@ -22,7 +22,8 @@ services:
       APP_DATABASE_URL: postgresql+asyncpg://app_user:apppass@db:5432/lineofsight
       PROVISIONER_DATABASE_URL: postgresql+asyncpg://provisioner:provpass@db:5432/lineofsight
       JWT_SECRET: change-me-in-prod
-    ports: ["8000:8000"]
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    ports: ["3000:3000"]
     command: >
       sh -c "python scripts/init_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 

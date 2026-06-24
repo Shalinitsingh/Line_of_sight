@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Brand } from "@/components/Brand";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { IndustryToggle } from "@/components/IndustryToggle";
 import { PasswordInput } from "@/components/PasswordInput";
 import { TopNav } from "@/components/TopNav";
@@ -74,6 +75,9 @@ export default function LoginPage() {
                 Help
               </Link>
             </div>
+
+            <p className="pt-2 text-center text-sm text-muted">or</p>
+            <GoogleSignInButton />
 
             <div className="pt-6 text-center">
               <Link

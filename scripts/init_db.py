@@ -1,12 +1,13 @@
 """
-Apply the schema as the provisioner role. Extensions must already exist (created by
-sql/bootstrap.sql on the Postgres container's first boot, or manually for local runs);
-schema.sql uses CREATE EXTENSION IF NOT EXISTS, which is a no-op once they're present.
+Idempotent database initialisation, run on every backend start.
 
-Connection comes from PROVISIONER_DATABASE_URL so the same script works in Docker
-(host 'db') and locally (host 127.0.0.1).
+- If the base schema is missing (fresh database), apply sql/schema.sql.
+- If it already exists (persisted volume), skip it (schema.sql is not re-runnable).
+- Always apply the idempotent migrations so an older database is brought up to date
+  without losing data.
 
-Usage: python scripts/init_db.py
+Connection comes from PROVISIONER_DATABASE_URL so this works in Docker (host 'db')
+and locally (host 127.0.0.1).
 """
 
 import asyncio
@@ -15,20 +16,30 @@ import pathlib
 
 import asyncpg
 
-SCHEMA = pathlib.Path(__file__).resolve().parent.parent / "sql" / "schema.sql"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SCHEMA = ROOT / "sql" / "schema.sql"
+MIGRATIONS = [ROOT / "sql" / "0002_auth_email.sql"]
 PROV_URL = os.environ.get(
     "PROVISIONER_DATABASE_URL",
     "postgresql+asyncpg://provisioner:provpass@127.0.0.1:5432/lineofsight",
-).replace(
-    "+asyncpg", ""
-)  # asyncpg wants a plain postgresql:// DSN
+).replace("+asyncpg", "")  # asyncpg wants a plain postgresql:// DSN
 
 
 async def main():
     conn = await asyncpg.connect(PROV_URL)
     try:
-        await conn.execute(SCHEMA.read_text())
-        print("schema applied")
+        exists = await conn.fetchval(
+            "SELECT to_regclass('public.organizations') IS NOT NULL"
+        )
+        if not exists:
+            await conn.execute(SCHEMA.read_text())
+            print("base schema applied")
+        else:
+            print("base schema already present; skipping")
+
+        for m in MIGRATIONS:
+            await conn.execute(m.read_text())
+            print(f"migration applied: {m.name}")
     finally:
         await conn.close()
 

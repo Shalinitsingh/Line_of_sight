@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_ttl_minutes: int = 60 * 12
 
+    # Google OAuth (set to enable 'Sign in with Google')
+    google_client_id: str | None = None
+
     # AI formula assistant
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-sonnet-4-6"

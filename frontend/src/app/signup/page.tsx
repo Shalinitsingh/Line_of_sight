@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { IndustryToggle } from "@/components/IndustryToggle";
 import { PasswordInput } from "@/components/PasswordInput";
 import { TopNav } from "@/components/TopNav";
@@ -96,14 +97,7 @@ export default function SignupPage() {
           </div>
 
           <p className="text-center text-sm text-muted">or</p>
-          <button
-            type="button"
-            disabled
-            title="Google sign-in is not wired in this build"
-            className="mx-auto flex cursor-not-allowed items-center justify-center gap-2 text-sm font-medium text-navy opacity-70"
-          >
-            <GoogleMark /> Sign up with Google
-          </button>
+          <GoogleSignInButton label="Sign up with Google" />
 
           <p className="pt-2 text-center text-sm text-muted">
             Already have an account?{" "}
@@ -118,28 +112,5 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48">
-      <path
-        fill="#EA4335"
-        d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.7 30.2 0 24 0 14.6 0 6.4 5.4 2.6 13.2l7.8 6.1C12.2 13.3 17.6 9.5 24 9.5Z"
-      />
-      <path
-        fill="#4285F4"
-        d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.7 7l7.2 5.6c4.2-3.9 6.6-9.6 6.6-17.1Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M10.4 28.3c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.8-6.1C1 16.1 0 19.9 0 23.7s1 7.6 2.6 10.7l7.8-6.1Z"
-      />
-      <path
-        fill="#34A853"
-        d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.2-5.6c-2 1.4-4.6 2.2-8.6 2.2-6.4 0-11.8-3.8-13.6-9.3l-7.8 6.1C6.4 42.6 14.6 48 24 48Z"
-      />
-    </svg>
   );
 }

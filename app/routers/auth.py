@@ -12,6 +12,7 @@ session (RLS bypass). verification_codes is provisioner-only.
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 import hashlib
 import secrets
@@ -69,6 +70,54 @@ class ResetPasswordIn(BaseModel):
     email: EmailStr
     code: str
     new_password: str
+
+
+class GoogleIn(BaseModel):
+    credential: str  # Google ID token (JWT) from Google Identity Services
+    industry: str = "corporate"
+
+
+async def _find_or_create_user(s, email: str, name: str | None, industry: str):
+    """Return (user_id, org_id, role, industry). Creates org+owner if new."""
+    row = (
+        await s.execute(
+            text("""
+                SELECT u.id, u.org_id, u.role, o.industry
+                FROM users u JOIN organizations o ON o.id = u.org_id
+                WHERE lower(u.email) = lower(:e)
+                """),
+            {"e": email},
+        )
+    ).first()
+    if row:
+        return row.id, row.org_id, row.role, row.industry
+
+    local = email.split("@")[0]
+    org_id = (
+        await s.execute(
+            text(
+                "INSERT INTO organizations (name, slug, industry) "
+                "VALUES (:n, :s, :i) RETURNING id"
+            ),
+            {
+                "n": name or f"{local}'s workspace",
+                "s": f"{local[:20]}-{secrets.token_hex(3)}".lower(),
+                "i": industry,
+            },
+        )
+    ).scalar_one()
+    user_id = (
+        await s.execute(
+            text("""
+                INSERT INTO users
+                    (org_id, email, full_name, role, email_verified)
+                VALUES (:o, :e, :f, 'owner', true)
+                RETURNING id
+                """),
+            {"o": str(org_id), "e": email, "f": name},
+        )
+    ).scalar_one()
+    return user_id, org_id, "owner", industry
 
 
 # --------------------------------------------------------------------------- #
@@ -147,6 +196,43 @@ async def login(body: LoginIn):
         "role": row.role,
         "industry": row.industry,
         "full_name": row.full_name,
+    }
+
+
+@router.post("/google")
+async def google_signin(body: GoogleIn):
+    """Verify a Google ID token, then log in (creating the account on first use)."""
+    if not settings.google_client_id:
+        raise HTTPException(
+            503, "Google sign-in is not configured (set GOOGLE_CLIENT_ID)"
+        )
+    try:
+        from google.auth.transport import requests as g_requests
+        from google.oauth2 import id_token
+
+        info = await asyncio.to_thread(
+            id_token.verify_oauth2_token,
+            body.credential,
+            g_requests.Request(),
+            settings.google_client_id,
+        )
+    except Exception:
+        raise HTTPException(401, "invalid Google credential")
+
+    email = info.get("email")
+    if not email or not info.get("email_verified", False):
+        raise HTTPException(401, "Google account email not verified")
+
+    async with provisioner_session() as s:
+        user_id, org_id, role, industry = await _find_or_create_user(
+            s, email, info.get("name"), body.industry
+        )
+    return {
+        "token": issue_token(user_id, org_id, role),
+        "org_id": str(org_id),
+        "role": role,
+        "industry": industry,
+        "full_name": info.get("name"),
     }
 
 

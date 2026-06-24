@@ -11,6 +11,7 @@ pandas
 openpyxl
 asteval
 anthropic
+google-auth
 pgvector
 httpx
 pytest
